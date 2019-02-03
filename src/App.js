@@ -8,7 +8,12 @@ class App extends Component {
     return (
       <div>
         <Map>
-          <Marker id="myLocation" coords={[24.9383, 60.1691]} color="blue" />
+          <Marker
+            id="myLocation"
+            message="This is a placeholder message"
+            coords={[24.9383, 60.1691]}
+            color="blue"
+          />
           <Marker
             id="anotherLocation"
             coords={[13.339826, 52.488932]}

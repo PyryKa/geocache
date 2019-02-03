@@ -18,6 +18,26 @@ class Map extends React.Component {
 
     map.on("load", (...args) => {
       this.setState({ map });
+
+      //Change cursor to pointer on mouse enter
+      map.on("mouseenter", "markers", function() {
+        map.getCanvas().style.cursor = "pointer";
+      });
+
+      //Change cursor back on mouse leave
+      map.on("mouseleave", "markers", function() {
+        map.getCanvas().style.cursor = "";
+      });
+
+      map.on("click", "markers", function(e) {
+        let coordinates = e.features[0].geometry.coordinates.slice();
+        let message = e.features[0].properties.message;
+
+        new mapboxGl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(message)
+          .addTo(map);
+      });
     });
   }
 

@@ -6,6 +6,9 @@ class Marker extends React.Component {
       type: "geojson",
       data: {
         type: "Feature",
+        properties: {
+          message: this.props.message
+        },
         geometry: {
           type: "Point",
           coordinates: this.props.coords
@@ -14,7 +17,7 @@ class Marker extends React.Component {
     });
 
     this.props.map.addLayer({
-      id: `${this.props.id}-layer`,
+      id: "markers",
       type: "circle",
       source: this.props.id,
       paint: {
