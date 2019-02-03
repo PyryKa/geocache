@@ -6,49 +6,21 @@ class Map extends React.Component {
   state = {
     map: null,
     helsinkiArea: null,
-
-    geojson: {
-      type: "geojson",
-      data: {
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [24.9384, 60.161]
-            },
-            properties: {
-              message: "Message placeholder"
-            }
-          },
-          {
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [24.9384, 60.1699]
-            },
-            properties: {
-              message: "Message placeholder"
-            }
-          }
-        ]
-      }
-    }
+    geojson: null
   };
 
   componentDidMount() {
     mapboxGl.accessToken =
       "pk.eyJ1IjoicHlyeWthIiwiYSI6ImNqcmNjc3F5cTBqZ3U0YW1sN2U0NWdwaGEifQ.ObuMlu8asDW2CCOLDmf-Kg";
 
-    // axios
-    //   .get("https://goecache-e75b9.firebaseio.com/markers.json")
-    //   .then(res => {
-    //     console.log(res);
-    //     console.log(res.data);
-    //     this.setState({ geojson: res.data });
-    //   });
+    //GET markers from DB
+    axios
+      .get("https://goecache-e75b9.firebaseio.com/markers.json")
+      .then(res => {
+        this.setState({ geojson: res.data });
+      });
 
+    //Get helsinki area geojson from DB
     axios
       .get("https://goecache-e75b9.firebaseio.com/helsinki.json")
       .then(res => {
@@ -65,10 +37,7 @@ class Map extends React.Component {
     map.on("load", (...args) => {
       this.setState({ map });
 
-      console.log(this.state.geojson);
-
       map.addSource("markers", this.state.geojson);
-      console.log(this.state.helsinkiArea);
       map.addSource("helsinki", this.state.helsinkiArea);
 
       //Layer for the markers
@@ -94,13 +63,15 @@ class Map extends React.Component {
         filter: ["==", "$type", "Polygon"]
       });
 
-      //Create the popup for showing messages
+      //Create the popup for showing messages on markers
       const popup = new mapboxGl.Popup({
         closeButton: false,
         closeOnClick: false
       });
 
       //Take the coordinates from cursor and save to DB, only if pointer in helsinki-layer
+      //At the moment this will break the geojson format in firebase because features will be transformed
+      //into object because of the unique key
       map.on("click", "helsinki-layer", function(e) {
         axios
           .post(
@@ -108,7 +79,7 @@ class Map extends React.Component {
             {
               type: "Feature",
               geometry: {
-                coordinates: [e.lngLat],
+                coordinates: [e.lngLat.lng, e.lngLat.lat],
                 type: "Point"
               },
               properties: {
