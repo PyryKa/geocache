@@ -5,8 +5,8 @@ import axios from "axios";
 class Map extends React.Component {
   state = {
     map: null,
-
     helsinkiArea: null,
+
     geojson: {
       type: "geojson",
       data: {
@@ -19,8 +19,7 @@ class Map extends React.Component {
               coordinates: [24.9384, 60.161]
             },
             properties: {
-              title: "Mapbox",
-              message: "Washington, D.C."
+              message: "Message placeholder"
             }
           },
           {
@@ -30,8 +29,7 @@ class Map extends React.Component {
               coordinates: [24.9384, 60.1699]
             },
             properties: {
-              title: "Mapbox",
-              message: "San Francisco, California"
+              message: "Message placeholder"
             }
           }
         ]
@@ -40,6 +38,9 @@ class Map extends React.Component {
   };
 
   componentDidMount() {
+    mapboxGl.accessToken =
+      "pk.eyJ1IjoicHlyeWthIiwiYSI6ImNqcmNjc3F5cTBqZ3U0YW1sN2U0NWdwaGEifQ.ObuMlu8asDW2CCOLDmf-Kg";
+
     // axios
     //   .get("https://goecache-e75b9.firebaseio.com/markers.json")
     //   .then(res => {
@@ -51,12 +52,8 @@ class Map extends React.Component {
     axios
       .get("https://goecache-e75b9.firebaseio.com/helsinki.json")
       .then(res => {
-        console.log(res.data);
         this.setState({ helsinkiArea: res.data });
       });
-
-    mapboxGl.accessToken =
-      "pk.eyJ1IjoicHlyeWthIiwiYSI6ImNqcmNjc3F5cTBqZ3U0YW1sN2U0NWdwaGEifQ.ObuMlu8asDW2CCOLDmf-Kg";
 
     const map = new mapboxGl.Map({
       container: this.mapContainer,
@@ -71,9 +68,10 @@ class Map extends React.Component {
       console.log(this.state.geojson);
 
       map.addSource("markers", this.state.geojson);
+      console.log(this.state.helsinkiArea);
+      map.addSource("helsinki", this.state.helsinkiArea);
 
-      //map.addSource("helsinki", this.state.helsinkiArea);
-
+      //Layer for the markers
       map.addLayer({
         id: "markers",
         type: "circle",
@@ -84,16 +82,17 @@ class Map extends React.Component {
         }
       });
 
-      // map.addLayer({
-      //   id: "park-boundary",
-      //   type: "fill",
-      //   source: this.state.helsinkiArea,
-      //   paint: {
-      //     "fill-color": "#888888",
-      //     "fill-opacity": 0.4
-      //   },
-      //   filter: ["==", "$type", "Polygon"]
-      // });
+      //Layer for Helsinki area
+      map.addLayer({
+        id: "helsinki-layer",
+        type: "fill",
+        source: this.state.helsinkiArea,
+        paint: {
+          "fill-color": "green",
+          "fill-opacity": 0.15
+        },
+        filter: ["==", "$type", "Polygon"]
+      });
 
       //Create the popup for showing messages
       const popup = new mapboxGl.Popup({
@@ -101,21 +100,23 @@ class Map extends React.Component {
         closeOnClick: false
       });
 
-      map.on("click", function(e) {
-        console.log(e.lngLat);
-        axios.post(
-          "https://goecache-e75b9.firebaseio.com/markers/data/features.json",
-          {
-            type: "Feature",
-            geometry: {
-              coordinates: [e.lngLat],
-              type: "Point"
-            },
-            properties: {
-              message: "Placeholder"
+      //Take the coordinates from cursor and save to DB, only if pointer in helsinki-layer
+      map.on("click", "helsinki-layer", function(e) {
+        axios
+          .post(
+            "https://goecache-e75b9.firebaseio.com/markers/data/features.json",
+            {
+              type: "Feature",
+              geometry: {
+                coordinates: [e.lngLat],
+                type: "Point"
+              },
+              properties: {
+                message: "Placeholder"
+              }
             }
-          }
-        );
+          )
+          .then(alert("Marker succesfully added"));
       });
 
       //Change cursor to pointer on mouse enter and show popup
@@ -152,13 +153,7 @@ class Map extends React.Component {
 
     return (
       <div style={style} ref={x => (this.mapContainer = x)}>
-        {this.state.map &&
-          this.props.children &&
-          React.Children.map(this.props.children, child =>
-            React.cloneElement(child, {
-              map: this.state.map
-            })
-          )}
+        {this.state.map && this.props.children}
       </div>
     );
   }
